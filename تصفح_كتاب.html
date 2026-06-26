@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>مكتبة الوصال | تصفح الكتب المقيدة واشتري نسختك</title>
+<meta name="description" content="مكتبة كتب أنيقة مع معاينة PDF مقيدة بحد أقصى 5 صفحات، سلة مشتريات وإتمام الطلب عبر واتساب، ودعم القراءة الليلية." />
+<!-- Google Fonts & Cairo -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet" />
+<!-- SwiperJS Carousel -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<!-- PDF.js library for preview restriction -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+<script>
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+</script>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  :root {
+    /* Light mode (default elegant theme) */
+    --bg-gradient: linear-gradient(145deg, #1a0033 0%, #3d006e 25%, #7b1fa2 50%, #c2185b 80%, #e91e8c 100%);
+    --card-bg: rgba(60, 12, 80, 0.5);
+    --text: #fdf2fb;
+    --text-muted: #d9b8e6;
+    --border: rgba(255, 255, 255, 0.16);
+    --gold: #f2c75c;
+    --pink: #e91e8c;
+    --pink-light: #ff7ac0;
+    --glow: 0 0 30px rgba(233, 30, 140, 0.5);
+    --shadow-card: 0 18px 50px rgba(0, 0, 0, 0.45);
+    --btn-pdf: linear-gradient(160deg, #e91e8c, #ad1457);
+    --input-bg: rgba(255,255,255,0.1);
+  }
+
+  body.night-mode {
+    --bg-gradient: linear-gradient(145deg, #0a0f1a 0%, #101624 40%, #1a1f2f 80%, #0a0c1a 100%);
+    --card-bg: rgba(10, 14, 23, 0.8);
+    --text: #eef4ff;
+    --text-muted: #a5b4cb;
+    --border: rgba(255, 255, 255, 0.08);
+    --gold: #ffdb7e;
+    --pink-light: #ff9ad0;
+    --glow: 0 0 20px rgba(233, 30, 140, 0.3);
+    --input-bg: rgba(255,255,255,0.05);
+  }
+
+  body {
+    font-family: 'Cairo', sans-serif;
+    background: #1a0033;
+    background-image: var(--bg-gradient);
+    background-attachment: fixed;
+    color: var(--text);
+    transition: background 0.3s, color 0.2s;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* floating hearts (same style) */
+  .hearts-bg {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+  .hearts-bg span {
+    position: absolute;
+    bottom: -40px;
+    display: block;
+    color: #fff;
+    opacity: 0.08;
+    animation: floatUp 16s infinite linear;
+  }
+  @keyframes floatUp {
+    0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+    10% { opacity: 0.12; }
+    90% { opacity: 0.12; }
+    100% { transform: translateY(-110vh) rotate(360deg); opacity: 0; }
+  }
+
+  .wrap {
+    position: relative;
+    z-index: 2;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+
+  /* header + night mode toggle */
+  .nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    padding: 20px 0 10px;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .logo-mark {
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #e91e8c, #7b1fa2);
+    display: grid;
+    place-items: center;
+    font-size: 26px;
+    box-shadow: var(--glow);
+  }
+  .logo-text strong {
+    font-size: 22px;
+    font-weight: 900;
+  }
+  .logo-text span {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .header-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  .night-toggle {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 40px;
+    padding: 8px 14px;
+    font-size: 18px;
+    cursor: pointer;
+    color: var(--gold);
+    transition: 0.2s;
+  }
+  .cart-btn {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 8px 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 800;
+    font-family: inherit;
+    color: var(--text);
+    cursor: pointer;
+    transition: 0.25s;
+  }
+  .cart-count {
+    background: var(--btn-pdf);
+    border-radius: 999px;
+    min-width: 22px;
+    height: 22px;
+    display: inline-grid;
+    place-items: center;
+    font-size: 12px;
+    font-weight: 900;
+    padding: 0 6px;
+  }
+
+  /* hero */
+  .hero {
+    text-align: center;
+    padding: 40px 0 25px;
+  }
+  .hero .pill {
+    display: inline-block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gold);
+    border: 1px solid var(--border);
+    padding: 6px 18px;
+    border-radius: 999px;
+    background: var(--card-bg);
+    backdrop-filter: blur(8px);
+    margin-bottom: 16px;
+  }
+  .hero h1 {
+    font-size: clamp(32px, 5vw, 52px);
+    font-weight: 900;
+  }
+  .hero .grad {
+    background: linear-gradient(90deg, var(--pink-light), var(--gold));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .hero p {
+    color: var(--text-muted);
+    max-width: 600px;
+    margin: 10px auto 0;
+  }
+
+  /* books slider */
+  .slider-section {
+    margin: 30px 0 25px;
+  }
+  .slider-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+  }
+  .slider-title h2 {
+    font-size: 22px;
+    font-weight: 800;
+    background: linear-gradient(120deg, var(--gold), var(--pink-light));
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .swiper {
+    border-radius: 32px;
+    padding: 12px 6px;
+  }
+  .swiper-slide {
+    background: var(--card-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border);
+    border-radius: 28px;
+    padding: 12px;
+    cursor: pointer;
+    transition: 0.2s;
+    text-align: center;
+  }
+  .swiper-slide:hover {
+    transform: scale(1.02);
+    box-shadow: var(--glow);
+    border-color: var(--pink);
+  }
+  .book-cover-img {
+    width: 100%;
+    aspect-ratio: 2 / 3;
+    object-fit: cover;
+    border-radius: 20px;
+    background: #2d0b44;
+    margin-bottom: 10px;
+  }
+  .book-cover-emoji {
+    font-size: 54px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 20px;
+    aspect-ratio: 2/3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .swiper-slide h4 {
+    font-size: 16px;
+    font-weight: 800;
+    margin: 8px 0 4px;
+  }
+  .swiper-slide .price-badge {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--gold);
+  }
+  .active-book-tag {
+    margin-top: 6px;
+    font-size: 12px;
+    background: var(--pink);
+    display: inline-block;
+    padding: 2px 12px;
+    border-radius: 40px;
+  }
+
+  /* PDF Preview Area with restriction */
+  .pdf-preview-area {
+    background: var(--card-bg);
+    backdrop-filter: blur(18px);
+    border: 1px solid var(--border);
+    border-radius: 32px;
+    padding: 20px;
+    margin: 10px 0 40px;
+  }
+  .preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    border-bottom: 1px dashed var(--border);
+    padding-bottom: 12px;
+  }
+  .preview-header h3 {
+    font-size: 20px;
+    font-weight: 800;
+  }
+  .pdf-controls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .pdf-controls button {
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 40px;
+    padding: 8px 18px;
+    font-family: inherit;
+    font-weight: 700;
+    color: var(--text);
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .pdf-controls button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .pdf-controls span {
+    font-weight: 600;
+  }
+  .pdf-canvas-container {
+    background: #00000030;
+    border-radius: 20px;
+    display: flex;
+    justify-content: center;
+    overflow-x: auto;
+    margin: 10px 0;
+    min-height: 420px;
+    align-items: center;
+  }
+  canvas {
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    border-radius: 12px;
+    max-width: 100%;
+    height: auto;
+  }
+  .restriction-message {
+    background: rgba(233,30,140,0.2);
+    border-right: 4px solid var(--gold);
+    padding: 16px;
+    border-radius: 20px;
+    margin-top: 18px;
+    text-align: center;
+  }
+  .buy-now-btn {
+    background: #25d366;
+    color: #04210f;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 60px;
+    font-weight: 800;
+    font-size: 16px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .warning-text {
+    font-weight: 700;
+    color: var(--gold);
+    margin-bottom: 6px;
+  }
+
+  /* Books grid (original cart system) */
+  .grid-title {
+    font-size: 28px;
+    font-weight: 800;
+    margin: 20px 0 10px;
+    text-align: center;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 26px;
+    padding: 20px 0 50px;
+  }
+  .book-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(14px);
+    border: 1px solid var(--border);
+    border-radius: 26px;
+    overflow: hidden;
+    transition: transform 0.3s;
+  }
+  .book-card:hover { transform: translateY(-6px); }
+  .card-cover {
+    background: linear-gradient(145deg, #7b1fa2, #e91e8c);
+    padding: 24px;
+    text-align: center;
+    aspect-ratio: 3/4;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .card-cover .big-emoji { font-size: 56px; }
+  .card-body { padding: 18px; }
+  .price-row {
+    display: flex;
+    gap: 12px;
+    align-items: baseline;
+    margin: 10px 0;
+  }
+  .old-price { text-decoration: line-through; font-size: 14px; color: var(--text-muted); }
+  .new-price { font-size: 22px; font-weight: 900; color: var(--gold); }
+  .actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+  }
+  .btn-add {
+    background: var(--btn-pdf);
+    border: none;
+    color: white;
+    font-weight: 800;
+    padding: 10px;
+    border-radius: 60px;
+    flex: 1;
+    cursor: pointer;
+  }
+  .btn-preview-grid {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 60px;
+    padding: 10px;
+    font-weight: 700;
+    color: var(--text);
+    cursor: pointer;
+  }
+
+  /* Drawer Cart */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(6px);
+    z-index: 90;
+    opacity: 0;
+    pointer-events: none;
+    transition: 0.3s;
+  }
+  .overlay.open { opacity: 1; pointer-events: auto; }
+  .drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 380px;
+    max-width: 90vw;
+    height: 100%;
+    background: #1e0436;
+    background-image: linear-gradient(145deg, #2c0b4a, #14022a);
+    border-left: 1px solid var(--border);
+    z-index: 100;
+    transform: translateX(110%);
+    transition: 0.35s cubic-bezier(0.2,0.9,0.4,1.1);
+    display: flex;
+    flex-direction: column;
+    color: white;
+  }
+  .drawer.open { transform: translateX(0); }
+  .drawer-head { padding: 22px; display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.2); }
+  .items-list { flex: 1; overflow-y: auto; padding: 16px; }
+  .cart-item { display: flex; gap: 12px; margin-bottom: 16px; background: rgba(255,255,255,0.08); padding: 10px; border-radius: 20px; }
+  .checkout-btn { background: #25d366; width: 100%; padding: 14px; border-radius: 60px; font-weight: 800; border: none; margin-top: 12px; cursor: pointer; }
+
+  footer { text-align: center; padding: 30px 0; color: var(--text-muted); font-size: 13px; }
+  @media (max-width: 700px) { .pdf-controls button { padding: 4px 12px; } }
+</style>
+</head>
+<body>
+<div class="hearts-bg" id="hearts"></div>
+<div class="wrap">
+  <header>
+    <div class="nav">
+      <div class="logo"><div class="logo-mark">📚</div><div class="logo-text"><strong>مكتبة الوصال</strong><span>تصفح PDF مقيد · اشتري كاملاً</span></div></div>
+      <div class="header-actions">
+        <button class="night-toggle" id="nightModeBtn" aria-label="القراءة الليلية">🌙 وضع ليلي</button>
+        <button class="cart-btn" onclick="openCart()">🛒 السلة <span class="cart-count" id="cartCount">0</span></button>
+      </div>
+    </div>
+  </header>
+  <section class="hero">
+    <span class="pill">✨ تصفح المقتطفات المجانية</span>
+    <h1>اقرأ أول <span class="grad">3-5 صفحات</span> مجاناً</h1>
+    <p>اختر كتاباً من الشريط العلوي، تصفح صفحاته التجريبية، ثم احصل على النسخة الكاملة عبر واتساب المدير.</p>
+  </section>
+
+  <!-- Swiper slider for books -->
+  <div class="slider-section">
+    <div class="slider-title"><h2>📖 أغلفة الكتب · اختر للتصفح المقيد</h2><span style="font-size:13px;">↶ اسحب للتنقل</span></div>
+    <div class="swiper bookSwiper">
+      <div class="swiper-wrapper" id="swiperWrapper"></div>
+      <div class="swiper-pagination"></div>
+      <div class="swiper-button-next"></div><div class="swiper-button-prev"></div>
+    </div>
+  </div>
+
+  <!-- PDF preview area with restriction + buy message -->
+  <div class="pdf-preview-area" id="pdfPreviewArea">
+    <div class="preview-header"><h3 id="currentBookTitle">📘 معاينة الكتاب</h3><span id="freeBadge" style="background: var(--pink); padding: 4px 12px; border-radius: 30px;">معاينة مجانية: 5 صفحات</span></div>
+    <div class="pdf-controls">
+      <button id="prevPageBtn" disabled>◀ السابق</button>
+      <span>الصفحة <span id="pageNum">0</span> / <span id="pageCount">0</span></span>
+      <button id="nextPageBtn" disabled>التالي ▶</button>
+    </div>
+    <div class="pdf-canvas-container"><canvas id="pdfCanvas" style="max-width:100%;"></canvas></div>
+    <div id="restrictionMsg" class="restriction-message" style="display: none;">
+      <div class="warning-text">⚠️ لقد وصلت إلى أقصى عدد صفحات المعاينة المجانية (الحد الأقصى).</div>
+      <div>لإكمال قراءة الكتاب كاملاً، يرجى شراء النسخة الأصلية عبر مدير المكتبة.</div>
+      <button class="buy-now-btn" id="buyFullFromPreview">📲 شراء النسخة الكاملة عبر واتساب</button>
+    </div>
+    <div id="noPdfMsg" style="text-align:center; padding:20px;">📄 اختر كتاباً من الشريط لبدء التصفح.</div>
+  </div>
+
+  <!-- Books Grid (complete store with cart) -->
+  <h2 class="grid-title">✨ جميع الكتب مع عروض التخفيض</h2>
+  <div class="grid" id="booksGrid"></div>
+  <footer>مكتبة الوصال — البحرين · إتمام الطلب عبر واتساب 66364039 · المعاينة مقيدة بـ 3~5 صفحات لدعم حقوق النشر</footer>
+</div>
+
+<!-- Cart drawer -->
+<div class="overlay" id="overlay" onclick="closeCart()"></div>
+<aside class="drawer" id="drawer"><div class="drawer-head"><h3>🛒 سلة المشتريات</h3><button class="close-x" style="background:none; border:none; font-size:24px; cursor:pointer;" onclick="closeCart()">✕</button></div><div class="items-list" id="cartItemsList"></div><div class="drawer-foot" style="padding:20px;"><div class="total" style="display:flex; justify-content:space-between; font-weight:900;"><span>الإجمالي</span><span id="cartTotal">0.00 د.ب</span></div><button class="checkout-btn" id="checkoutBtn" onclick="checkoutCart()">💬 إتمام الطلب عبر واتساب</button></div></aside>
+
+<script>
+  // ---------- BOOKS DATA (with PDF url, original price, discount) ----------
+  const booksData = [
+    { id: 1, title: "همسات القلب", author: "سارة الأمين", originalPrice: 6.5, price: 4.5, discount: true, emoji: "💗", ribbon: "أكثر مبيعاً", pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", maxFree: 5, coverImg: null },
+    { id: 2, title: "أسرار النجاح", author: "د. خالد ناصر", originalPrice: 9.0, price: 6.0, discount: true, emoji: "🚀", ribbon: "تطوير ذات", pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", maxFree: 5, coverImg: null },
+    { id: 3, title: "رحلة في الخيال", author: "ليلى منصور", originalPrice: 7.0, price: 5.5, discount: true, emoji: "🌙", ribbon: "رواية", pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", maxFree: 4, coverImg: null },
+    { id: 4, title: "حدائق الحكمة", author: "عبدالله الراشد", originalPrice: 5.0, price: 3.75, discount: false, emoji: "🌿", ribbon: "حكم", pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", maxFree: 5, coverImg: null },
+    { id: 5, title: "ألوان الروح", author: "نورة سالم", originalPrice: 7.5, price: 5.0, discount: true, emoji: "🎨", ribbon: "فنون", pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", maxFree: 3, coverImg: null },
+    { id: 6, title: "مذاق الدار", author: "أم محمد", originalPrice: 5.5, price: 4.0, discount: true, emoji: "🍽️", ribbon: "طبخ", pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", maxFree: 4, coverImg: null }
+  ];
+
+  // Cart logic
+  let cart = {}; // { id: qty }
+  function updateCartUI() {
+    let totalQty = 0, totalPrice = 0;
+    const container = document.getElementById("cartItemsList");
+    if(Object.keys(cart).length === 0) { container.innerHTML = '<div style="text-align:center; padding:30px;">سلتك فارغة 🌸</div>'; document.getElementById("cartTotal").innerText = "0.00 د.ب"; document.getElementById("cartCount").innerText = "0"; return; }
+    let html = '';
+    for(let id in cart) {
+      let book = booksData.find(b => b.id == id);
+      let qty = cart[id];
+      let sub = book.price * qty;
+      totalQty += qty;
+      totalPrice += sub;
+      html += `<div class="cart-item"><div style="font-size:30px;">${book.emoji}</div><div style="flex:1;"><strong>${book.title}</strong><br/>${book.price} د.ب</div><div style="display:flex; gap:8px; align-items:center;"><button onclick="changeQty(${id}, -1)">-</button><span>${qty}</span><button onclick="changeQty(${id}, 1)">+</button></div></div>`;
+    }
+    container.innerHTML = html;
+    document.getElementById("cartTotal").innerText = totalPrice.toFixed(2) + " د.ب";
+    document.getElementById("cartCount").innerText = totalQty;
+  }
+  window.changeQty = (id, delta) => {
+    if(!cart[id]) cart[id]=0;
+    cart[id] += delta;
+    if(cart[id] <= 0) delete cart[id];
+    updateCartUI();
+  };
+  window.addToCart = (id) => { cart[id] = (cart[id]||0)+1; updateCartUI(); };
+  window.openCart = () => { document.getElementById("drawer").classList.add("open"); document.getElementById("overlay").classList.add("open"); };
+  window.closeCart = () => { document.getElementById("drawer").classList.remove("open"); document.getElementById("overlay").classList.remove("open"); };
+  function checkoutCart() {
+    let items = Object.keys(cart);
+    if(items.length === 0) return;
+    let text = `📚 طلب جديد من مكتبة الوصال%0A`;
+    let total = 0;
+    items.forEach(id => { let b = booksData.find(x=>x.id==id); let sub = b.price * cart[id]; total += sub; text += `• ${b.title} ×${cart[id]} = ${sub.toFixed(2)} د.ب%0A`; });
+    text += `%0A💰 الإجمالي: ${total.toFixed(2)} دينار بحريني%0Aأرغب بإتمام الطلب.`;
+    window.open(`https://wa.me/97366364039?text=${text}`, "_blank");
+  }
+  window.checkoutCart = checkoutCart;
+
+  // Render books grid
+  const gridContainer = document.getElementById("booksGrid");
+  booksData.forEach(book => {
+    const card = document.createElement("div"); card.className = "book-card";
+    card.innerHTML = `
+      <div class="card-cover"><div class="big-emoji">${book.emoji}</div><div style="font-weight:bold;">${book.title}</div></div>
+      <div class="card-body"><h3>${book.title}</h3><div class="author" style="color:var(--gold);">${book.author}</div>
+      <div class="price-row">${book.discount ? `<span class="old-price">${book.originalPrice.toFixed(2)} د.ب</span>` : ''}<span class="new-price">${book.price.toFixed(2)} د.ب</span></div>
+      <div class="actions"><button class="btn-add" onclick="addToCart(${book.id})">➕ أضف للسلة</button>
+      <button class="btn-preview-grid" onclick="selectBookAndPreview(${book.id})">📖 معاينة مقيدة</button></div></div>`;
+    gridContainer.appendChild(card);
+  });
+
+  // ---------------- PDF Preview with restriction logic (global) ----------------
+  let currentPdfDoc = null;
+  let currentPage = 1;
+  let currentMaxFree = 5;
+  let currentBookId = null;
+  let totalPdfPages = 0;
+
+  const canvas = document.getElementById("pdfCanvas");
+  const ctx = canvas.getContext('2d');
+  const prevBtn = document.getElementById("prevPageBtn");
+  const nextBtn = document.getElementById("nextPageBtn");
+  const pageNumSpan = document.getElementById("pageNum");
+  const pageCountSpan = document.getElementById("pageCount");
+  const restrictionDiv = document.getElementById("restrictionMsg");
+  const noPdfMsgDiv = document.getElementById("noPdfMsg");
+  const buyFullBtn = document.getElementById("buyFullFromPreview");
+
+  async function loadPreviewForBook(bookId) {
+    const book = booksData.find(b => b.id === bookId);
+    if(!book || !book.pdfUrl) { noPdfMsgDiv.style.display = "block"; restrictionDiv.style.display = "none"; document.getElementById("currentBookTitle").innerHTML = "📘 لا يوجد ملف PDF"; return; }
+    noPdfMsgDiv.style.display = "none";
+    currentBookId = book.id;
+    currentMaxFree = book.maxFree || 5;
+    document.getElementById("currentBookTitle").innerHTML = `📖 ${book.title} | معاينة مجانية: ${currentMaxFree} صفحة`;
+    document.getElementById("freeBadge").innerHTML = `📄 معاينة مجانية: ${currentMaxFree} صفحات`;
+    restrictionDiv.style.display = "none";
+    try {
+      const loadingTask = pdfjsLib.getDocument(book.pdfUrl);
+      currentPdfDoc = await loadingTask.promise;
+      totalPdfPages = currentPdfDoc.numPages;
+      pageCountSpan.innerText = totalPdfPages;
+      currentPage = 1;
+      await renderPage(currentPage);
+      updateNavButtons();
+    } catch(e) { console.error(e); noPdfMsgDiv.style.display = "block"; restrictionDiv.style.display = "none"; }
+  }
+
+  async function renderPage(pageNumber) {
+    if(!currentPdfDoc) return;
+    if(pageNumber > currentMaxFree) {
+      // restriction active: show message instead of page
+      restrictionDiv.style.display = "block";
+      canvas.style.display = "none";
+      pageNumSpan.innerText = pageNumber;
+      return;
+    } else {
+      restrictionDiv.style.display = "none";
+      canvas.style.display = "block";
+    }
+    const page = await currentPdfDoc.getPage(pageNumber);
+    const viewport = page.getViewport({ scale: 1.4 });
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    const renderContext = { canvasContext: ctx, viewport: viewport };
+    await page.render(renderContext).promise;
+    pageNumSpan.innerText = pageNumber;
+  }
+
+  function updateNavButtons() {
+    if(!currentPdfDoc) { prevBtn.disabled = true; nextBtn.disabled = true; return; }
+    prevBtn.disabled = (currentPage <= 1);
+    // next disabled if we reach max free OR end of document
+    if(currentPage >= currentMaxFree || currentPage >= totalPdfPages) nextBtn.disabled = true;
+    else nextBtn.disabled = false;
+  }
+
+  prevBtn.onclick = async () => {
+    if(currentPage > 1) { currentPage--; await renderPage(currentPage); updateNavButtons(); }
+  };
+  nextBtn.onclick = async () => {
+    if(currentPage < currentMaxFree && currentPage < totalPdfPages) { currentPage++; await renderPage(currentPage); updateNavButtons(); }
+    else if(currentPage >= currentMaxFree && currentPage < totalPdfPages) {
+      // already blocked but next not active; anyway show restriction
+      restrictionDiv.style.display = "block";
+      canvas.style.display = "none";
+      updateNavButtons();
+    } else { updateNavButtons(); }
+  };
+
+  window.selectBookAndPreview = async (id) => {
+    await loadPreviewForBook(id);
+    // Also highlight slider? optional find swiper slide active
+  };
+
+  // Buy full from preview using WhatsApp
+  buyFullBtn.onclick = () => {
+    if(!currentBookId) return;
+    const book = booksData.find(b => b.id === currentBookId);
+    if(!book) return;
+    const msg = `أرغب في شراء النسخة الكاملة من كتاب "${book.title}" بسعر ${book.price} دينار بحريني. يرجى تزويدي بالنسخة PDF الكاملة.`;
+    window.open(`https://wa.me/97366364039?text=${encodeURIComponent(msg)}`, "_blank");
+  };
+
+  // Swiper initialization
+  const swiperWrapper = document.getElementById("swiperWrapper");
+  booksData.forEach(book => {
+    const slide = document.createElement("div"); slide.className = "swiper-slide";
+    slide.innerHTML = `
+      <div class="book-cover-emoji" style="background:linear-gradient(145deg,#c2185b,#7b1fa2);">${book.emoji}</div>
+      <h4>${book.title}</h4>
+      <div class="price-badge">${book.price} د.ب</div>
+      <div class="active-book-tag">📖 معاينة</div>
+    `;
+    slide.addEventListener("click", () => selectBookAndPreview(book.id));
+    swiperWrapper.appendChild(slide);
+  });
+  new Swiper('.bookSwiper', { slidesPerView: 2.5, spaceBetween: 16, loop: false, pagination: { el: '.swiper-pagination', clickable: true }, navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' }, breakpoints: { 640: { slidesPerView: 3.5 }, 1024: { slidesPerView: 5 } } });
+
+  // Night mode toggle (reading night mode)
+  const nightBtn = document.getElementById("nightModeBtn");
+  nightBtn.addEventListener("click", () => {
+    document.body.classList.toggle("night-mode");
+    const isNight = document.body.classList.contains("night-mode");
+    nightBtn.innerHTML = isNight ? "☀️ وضع عادي" : "🌙 وضع ليلي";
+    localStorage.setItem("libraryNightMode", isNight);
+  });
+  if(localStorage.getItem("libraryNightMode") === "true") { document.body.classList.add("night-mode"); nightBtn.innerHTML = "☀️ وضع عادي"; }
+
+  // floating hearts generation
+  const heartsDiv = document.getElementById("hearts");
+  for(let i=0;i<22;i++){ let h=document.createElement("span"); h.textContent=["♥","❤","❀","✦"][i%4]; h.style.left=Math.random()*100+"%"; h.style.fontSize=(12+Math.random()*34)+"px"; h.style.animationDuration=(10+Math.random()*15)+"s"; h.style.animationDelay=(Math.random()*12)+"s"; heartsDiv.appendChild(h); }
+
+  // default preview first book
+  if(booksData.length) selectBookAndPreview(booksData[0].id);
+  updateCartUI();
+</script>
+</body>
+</html>
